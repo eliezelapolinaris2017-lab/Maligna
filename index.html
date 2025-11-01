@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Inventario Corporativo</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- PDFs reales (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginView" class="view active">
+    <div class="auth-card">
+      <h1>Inventario Corporativo</h1>
+      <p class="muted">Establece un PIN si es tu primer uso.</p>
+      <div class="row">
+        <label>PIN</label>
+        <input id="pinInput" type="password" placeholder="••••"/>
+      </div>
+      <div class="row">
+        <button id="loginBtn">Entrar</button>
+        <button id="setPinBtn" class="outline">Crear/Cambiar PIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="appView" class="view">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">Oasis • Inventario</div>
+      </div>
+      <nav>
+        <button data-nav="dashboard" class="nav-btn active">Dashboard</button>
+        <button data-nav="items" class="nav-btn">Productos</button>
+        <button data-nav="categories" class="nav-btn">Categorías</button>
+        <button data-nav="suppliers" class="nav-btn">Suplidores</button>
+        <button data-nav="warehouses" class="nav-btn">Almacenes</button>
+        <hr/>
+        <button data-nav="purchases" class="nav-btn">Compras</button>
+        <button data-nav="sales" class="nav-btn">Ventas</button>
+        <button data-nav="transfers" class="nav-btn">Transferencias</button>
+        <button data-nav="adjustments" class="nav-btn">Ajustes</button>
+        <hr/>
+        <button data-nav="reports" class="nav-btn">Reportes</button>
+        <button data-nav="settings" class="nav-btn">Configuración</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="exportJsonBtn" class="small">Exportar JSON</button>
+        <button id="importJsonBtn" class="small">Importar JSON</button>
+        <input id="importFile" type="file" accept=".json" hidden/>
+        <button id="exportCsvBtn" class="small">CSV Productos</button>
+        <button id="logoutBtn" class="small outline">Salir</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="page active">
+        <h2>Dashboard</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="kpi">
+              <div class="kpi-title">SKUs</div>
+              <div id="kpiSkus" class="kpi-value">0</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="kpi">
+              <div class="kpi-title">Stock Total</div>
+              <div id="kpiStock" class="kpi-value">0</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="kpi">
+              <div class="kpi-title">Bajo Inventario</div>
+              <div id="kpiLow" class="kpi-value warn">0</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="kpi">
+              <div class="kpi-title">Almacenes</div>
+              <div id="kpiWh" class="kpi-value">0</div>
+            </div>
+          </div>
+        </div>
+        <h3 class="mt">Alertas de Bajo Inventario</h3>
+        <table class="table" id="lowStockTable">
+          <thead><tr><th>SKU</th><th>Nombre</th><th>Stock</th><th>Mínimo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- ITEMS -->
+      <section id="items" class="page">
+        <div class="page-header">
+          <h2>Productos</h2>
+          <div class="actions">
+            <input id="itemSearch" placeholder="Buscar SKU / nombre..."/>
+            <button id="addItemBtn">Nuevo</button>
+            <button id="pdfItemsBtn" class="outline">PDF Catálogo (B/N)</button>
+          </div>
+        </div>
+        <table class="table" id="itemsTable">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Nombre</th><th>Categoría</th>
+              <th>Precio</th><th>Mín.</th><th>Stock Total</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- CATEGORIES -->
+      <section id="categories" class="page">
+        <div class="page-header">
+          <h2>Categorías</h2>
+          <div class="actions"><button id="addCatBtn">Nueva</button></div>
+        </div>
+        <table class="table" id="catTable">
+          <thead><tr><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- SUPPLIERS -->
+      <section id="suppliers" class="page">
+        <div class="page-header">
+          <h2>Suplidores</h2>
+          <div class="actions"><button id="addSupBtn">Nuevo</button></div>
+        </div>
+        <table class="table" id="supTable">
+          <thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- WAREHOUSES -->
+      <section id="warehouses" class="page">
+        <div class="page-header">
+          <h2>Almacenes</h2>
+          <div class="actions"><button id="addWhBtn">Nuevo</button></div>
+        </div>
+        <table class="table" id="whTable">
+          <thead><tr><th>Nombre</th><th>Ubicación</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- PURCHASES -->
+      <section id="purchases" class="page">
+        <div class="page-header">
+          <h2>Compras</h2>
+          <div class="actions"><button id="addPurchaseBtn">Registrar Compra</button></div>
+        </div>
+        <table class="table" id="purchaseTable">
+          <thead><tr><th>Fecha</th><th>Suplidor</th><th>Almacén</th><th>SKU</th><th>Qty</th><th>Costo</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- SALES -->
+      <section id="sales" class="page">
+        <div class="page-header">
+          <h2>Ventas</h2>
+          <div class="actions"><button id="addSaleBtn">Registrar Venta</button></div>
+        </div>
+        <table class="table" id="salesTable">
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Almacén</th><th>SKU</th><th>Qty</th><th>Precio</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- TRANSFERS -->
+      <section id="transfers" class="page">
+        <div class="page-header">
+          <h2>Transferencias</h2>
+          <div class="actions"><button id="addTransferBtn">Registrar Transferencia</button></div>
+        </div>
+        <table class="table" id="transferTable">
+          <thead><tr><th>Fecha</th><th>Desde</th><th>Hacia</th><th>SKU</th><th>Qty</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- ADJUSTMENTS -->
+      <section id="adjustments" class="page">
+        <div class="page-header">
+          <h2>Ajustes</h2>
+          <div class="actions"><button id="addAdjBtn">Registrar Ajuste</button></div>
+        </div>
+        <table class="table" id="adjTable">
+          <thead><tr><th>Fecha</th><th>Almacén</th><th>SKU</th><th>Δ Qty</th><th>Motivo</th><th>Acciones</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="reports" class="page">
+        <h2>Reportes</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Existencias por Almacén</h3>
+            <div class="row">
+              <input id="repSku" placeholder="SKU opcional"/>
+              <button id="repStockBtn">Generar</button>
+              <button id="pdfStockBtn" class="outline">PDF Stock (B/N)</button>
+            </div>
+            <table class="table" id="repStockTable">
+              <thead><tr><th>Almacén</th><th>SKU</th><th>Nombre</th><th>Stock</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Kardex (Movimientos)</h3>
+            <div class="row">
+              <input id="kardexSku" placeholder="SKU"/>
+              <button id="kardexBtn">Ver</button>
+              <button id="pdfKardexBtn" class="outline">PDF Kardex (B/N)</button>
+            </div>
+            <table class="table" id="kardexTable">
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Qty</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="page">
+        <h2>Configuración</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Logo y Nombre</h3>
+            <div class="row"><input id="brandName" placeholder="Nombre corporativo"/></div>
+            <div class="row"><input id="logoFile" type="file" accept="image/*"/></div>
+            <div class="row"><img id="logoPreview" class="logo-preview" alt="logo"/></div>
+            <button id="saveBrandBtn">Guardar</button>
+          </div>
+          <div class="card">
+            <h3>Seguridad</h3>
+            <div class="row"><button id="changePinBtn">Cambiar PIN</button></div>
+            <p class="muted">Los datos se guardan localmente en este dispositivo.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Título</h3>
+        <button id="modalClose">×</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+      <div class="modal-actions">
+        <button id="modalCancel" class="outline">Cancelar</button>
+        <button id="modalOk">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
